@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101214">
+  <title>AirMouse — Gesture Control</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css', v='20261017-gestures-v5') }}">
+  <script defer src="{{ url_for('static', filename='app.js', v='20261017-gestures-v5') }}" type="module"></script>
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <a class="brand" href="#" aria-label="AirMouse home">
+        <span class="brand-mark">A</span>
+        <span>air<span class="brand-light">mouse</span></span>
+      </a>
+      <div class="header-right">
+        <span class="privacy"><span class="privacy-dot" aria-hidden="true"></span> Processing stays on this device</span>
+        <span class="connection" id="connection" role="status" aria-live="polite">
+          <i aria-hidden="true"></i>
+          <span>Checking backend</span>
+        </span>
+      </div>
+    </header>
+
+    <main>
+      <section class="intro" aria-labelledby="intro-title">
+        <div>
+          <p class="eyebrow">GESTURE CONTROL <span aria-hidden="true">·</span> LOCAL SESSION</p>
+          <h1 id="intro-title">Your hands, in control.</h1>
+          <p class="subhead">A natural way to move around your desktop. Your camera feed stays right here.</p>
+        </div>
+        <div class="session-pill" aria-label="Session status">
+          <span class="session-dot" aria-hidden="true"></span> SESSION READY
+        </div>
+      </section>
+
+      <div class="notice" id="systemNotice" role="status" aria-live="polite" hidden></div>
+      <div class="notice error-notice" id="errorNotice" role="alert" hidden></div>
+
+      <section class="workspace" aria-label="Main workspace">
+        <article class="panel camera-panel">
+          <div class="panel-head">
+            <div>
+              <span class="section-kicker">CAMERA FEED</span>
+              <h2>Live preview</h2>
+            </div>
+            <div class="feed-state" id="trackingPill" role="status" aria-live="polite">
+              <span class="state-indicator" aria-hidden="true"></span>
+              <span>Camera off</span>
+            </div>
+          </div>
+          <div class="video-frame" id="videoFrame">
+            <video id="video" playsinline muted aria-hidden="true"></video>
+            <canvas id="overlay" aria-hidden="true"></canvas>
+            <div class="camera-placeholder" id="placeholder">
+              <div class="camera-icon" aria-hidden="true">◎</div>
+              <strong>Ready when you are</strong>
+              <span>Start the camera to begin local hand tracking.</span>
+            </div>
+            <div class="video-badge" id="fpsBadge" aria-live="polite">— FPS</div>
+          </div>
+          <div class="camera-footer">
+            <span class="camera-info" id="cameraInfo">Camera not started</span>
+            <label class="camera-select-wrap">
+              DEVICE
+              <select id="cameraSelect" disabled aria-label="Camera device">
+                <option>Default camera</option>
+              </select>
+            </label>
+          </div>
+          <div class="controls" role="group" aria-label="Camera controls">
+            <button class="button button-primary" id="startButton" type="button">
+              <span class="button-icon" aria-hidden="true">▶</span> Start camera
+            </button>
+            <button class="button button-secondary" id="pauseButton" type="button" disabled>
+              <span class="button-icon" aria-hidden="true">Ⅱ</span> Pause
+            </button>
+            <button class="button button-danger" id="stopButton" type="button" disabled>Stop camera</button>
+            <button class="button button-secondary" id="floatButton" type="button" disabled title="Float camera preview above other windows">Float preview</button>
+            <button class="button button-emergency" id="emergencyButton" type="button" title="Emergency stop (Esc)">
+              Emergency stop <kbd>Esc</kbd>
+            </button>
+          </div>
+        </article>
+
+        <aside class="side-column">
+          <article class="panel status-panel">
+            <div class="panel-head compact">
+              <div>
+                <span class="section-kicker">LIVE STATUS</span>
+                <h2>Tracking</h2>
+              </div>
+              <span class="hand-icon" aria-hidden="true">✳</span>
+            </div>
+            <div class="gesture-card">
+              <span class="small-label">CURRENT GESTURE</span>
+              <div class="gesture-current">
+                <span class="gesture-symbol" id="gestureSymbol" aria-hidden="true">—</span>
+                <strong id="gestureText">Waiting for camera</strong>
+              </div>
+              <p id="gestureHint">Start the camera to see your hand status.</p>
+            </div>
+            <div class="status-rows">
+              <div class="status-row">
+                <span><i class="tiny-dot" id="handDot" aria-hidden="true"></i> Hand detection</span>
+                <strong id="handStatus">Not active</strong>
+              </div>
+              <div class="status-row">
+                <span><i class="tiny-dot" id="desktopDot" aria-hidden="true"></i> Desktop control</span>
+                <strong id="desktopStatus">Checking…</strong>
+              </div>
+              <div class="status-row">
+                <span><i class="tiny-dot" aria-hidden="true"></i> Screen resolution</span>
+                <strong id="resolution">—</strong>
+              </div>
+            </div>
+          </article>
+
+          <article class="panel settings-panel">
+            <div class="panel-head compact">
+              <div>
+                <span class="section-kicker">PERSONALIZE</span>
+                <h2>Control settings</h2>
+              </div>
+              <span class="settings-icon" aria-hidden="true">☷</span>
+            </div>
+            <label class="setting">
+              <span>
+                <span>Pointer sensitivity</span>
+                <output id="sensitivityOutput">1.2×</output>
+              </span>
+              <input id="sensitivity" type="range" min="0.6" max="2" step="0.1" value="1.2" aria-label="Pointer sensitivity">
+              <small>How quickly the pointer responds to hand movement.</small>
+            </label>
+            <label class="setting">
+              <span>
+                <span>Cursor smoothing</span>
+                <output id="smoothingOutput">40%</output>
+              </span>
+              <input id="smoothing" type="range" min="10" max="92" step="1" value="40" aria-label="Cursor smoothing">
+              <small>Higher values reduce jitter, with slightly more lag.</small>
+            </label>
+            <label class="setting">
+              <span>
+                <span>Scroll speed</span>
+                <output id="scrollOutput">4</output>
+              </span>
+              <input id="scrollSpeed" type="range" min="1" max="10" step="1" value="4" aria-label="Scroll speed">
+              <small>Scroll distance for each vertical hand movement.</small>
+            </label>
+            <label class="setting last">
+              <span>
+                <span>Movement dead zone</span>
+                <output id="deadzoneOutput">0.6%</output>
+              </span>
+              <input id="deadzone" type="range" min="0" max="2" step="0.1" value="0.6" aria-label="Movement dead zone">
+              <small>Ignore tiny movements to keep the pointer steady.</small>
+            </label>
+          </article>
+        </aside>
+      </section>
+
+      <section class="panel gestures-panel" aria-labelledby="gestures-title">
+        <div class="panel-head compact">
+          <div>
+            <span class="section-kicker">QUICK REFERENCE</span>
+            <h2 id="gestures-title">Gesture guide</h2>
+          </div>
+          <span class="guide-note">System-wide pointer · Face your palm to the camera · One pose at a time</span>
+        </div>
+        <div class="gesture-grid">
+          <div class="gesture-item">
+              <div class="gesture-art pointer-art" aria-hidden="true"><span>✌</span></div>
+              <div>
+                <strong>Move pointer</strong>
+                <p>Raise index + middle; move their midpoint</p>
+            </div>
+          </div>
+          <div class="gesture-item">
+            <div class="gesture-art click-art" aria-hidden="true"><span>⏸</span></div>
+            <div>
+              <strong>Pause control</strong>
+              <p>Hold thumb + two raised fingers for 0.7 s</p>
+            </div>
+          </div>
+          <div class="gesture-item">
+              <div class="gesture-art right-art" aria-hidden="true"><span>☝</span></div>
+              <div>
+                <strong>Right click</strong>
+                <p>Raise index only; lower it to re-arm</p>
+            </div>
+          </div>
+          <div class="gesture-item">
+              <div class="gesture-art scroll-art" aria-hidden="true"><span>✊</span></div>
+              <div>
+                <strong>Scroll</strong>
+                <p>Close all fingers; move fist vertically</p>
+              </div>
+            </div>
+            <p class="gesture-pause-note">Pause: hold thumb + index + middle fingers up for 0.7 seconds. Resume with the button.</p>
+        </div>
+      </section>
+
+      <footer>
+        <span>AirMouse <span class="footer-muted">· Local-first gesture control</span></span>
+        <span>Press <kbd>Esc</kbd> anytime to stop control</span>
+      </footer>
+    </main>
+  </div>
+</body>
+</html>
